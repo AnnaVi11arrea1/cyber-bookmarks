@@ -2,6 +2,9 @@
 
 A neon side-panel bookmark manager for Chrome, with an optional **Signal Feed** that pulls in your LinkedIn and dev.to notifications, Stripe sales, and security alerts from your own Linux server.
 
+<img width="761" height="517" alt="preview of extension" src="https://github.com/user-attachments/assets/d0fe5196-ba1f-496e-86f6-2c4af3a4bdd8" />
+
+
 ## Features
 
 - **Bookmarks in the side panel.** Drag to reorder, drop onto a folder to nest it, and group items into folders with Ctrl/Shift+click and then **⧉ GROUP** (Ctrl+G). Right-click an item for more options.
