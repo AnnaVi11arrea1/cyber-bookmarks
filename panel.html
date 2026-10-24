@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NEURAL//LINKS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Share+Tech+Mono&display=swap">
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <div class="app">
+    <header class="hud">
+      <div class="brand">
+        <div class="sub"><span class="blink">●</span> <span id="stats">SYNCING…</span></div>
+      </div>
+      <button class="icon-btn" id="btn-full" type="button" title="Open full-screen view">⤢</button>
+    </header>
+
+    <label class="search">
+      <span class="prompt">&gt;_</span>
+      <input id="search" type="search" placeholder="query the net…   ( / )" autocomplete="off" spellcheck="false">
+    </label>
+
+    <div class="toolbar">
+      <button id="btn-tab" type="button" title="Bookmark the current tab (into the selected folder, or the bar)">+ JACK IN TAB</button>
+      <button id="btn-folder" type="button" title="New folder (inside the selected folder, or the bar)">+ FOLDER</button>
+      <button id="btn-group" type="button" title="Group selected items into a new folder (Ctrl+G)" disabled>⧉ GROUP<span id="sel-count"></span></button>
+      <span class="spacer"></span>
+      <button class="icon-btn" id="btn-expand" type="button" title="Expand all">▾</button>
+      <button class="icon-btn" id="btn-collapse" type="button" title="Collapse all">▸</button>
+    </div>
+
+    <main id="tree" class="tree" title="Drag to reorder · drop ON a folder to nest · Ctrl/Shift+click to multi-select · right-click for more"></main>
+
+    <section id="feed" class="feed">
+      <div class="feed-head">
+        <button id="feed-toggle" class="feed-title" type="button"><span class="caret"></span>SIGNAL FEED</button>
+        <span id="feed-new" class="pill" hidden></span>
+        <span id="feed-today" class="today"></span>
+        <span class="spacer"></span>
+        <button class="icon-btn" id="feed-refresh" type="button" title="Refresh now">⟳</button>
+        <button class="icon-btn" id="feed-settings" type="button" title="Connect sources">⚙</button>
+      </div>
+      <div id="tickers" class="tickers"></div>
+    </section>
+  </div>
+
+  <div id="menu" class="menu" hidden></div>
+
+  <dialog id="modal">
+    <form method="dialog">
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+      <div class="modal-actions">
+        <button value="ok" id="modal-ok" class="primary">EXECUTE</button>
+        <button value="cancel" formnovalidate>ABORT</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="panel.js"></script>
+</body>
+</html>
