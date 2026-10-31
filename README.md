@@ -8,6 +8,7 @@ A neon side-panel bookmark manager for Chrome, with an optional **Signal Feed** 
 ## Features
 
 - **Bookmarks in the side panel.** Drag to reorder, drop onto a folder to nest it, and group items into folders with Ctrl/Shift+click and then **⧉ GROUP** (Ctrl+G). Right-click an item for more options.
+- **Hotlinks.** Colored buttons above the tree for the pages you use most. Click **+ HOTLINK** to add one with a name, link, and color; click a button to open it, middle-click for a new tab. Right-click to edit or delete it, and drag to reorder. They're saved in Chrome sync storage, separate from your bookmarks.
 - **Full-screen view.** Click **⤢** to open the same tree in a tab.
 - **Signal Feed.** It checks every 5 minutes and shows new items as a badge count on the toolbar icon. It can also send desktop alerts.
 - **Your real bookmarks.** It edits Chrome's own bookmarks, so changes sync wherever Chrome sync does.
