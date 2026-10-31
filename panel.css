@@ -115,6 +115,25 @@ button:disabled { opacity: 0.35; cursor: default; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; }
 .spacer { flex: 1; }
 
+/* ---------- hotlinks ---------- */
+/* --qc is each button's chosen color, --qc-ink the text color that reads on it (see renderQuick in panel.js) */
+.quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 14px 10px; }
+.quick-btn {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--qc);
+  border-color: var(--qc);
+  background: color-mix(in srgb, var(--qc) 12%, transparent);
+  text-shadow: 0 0 6px color-mix(in srgb, var(--qc) 55%, transparent);
+}
+.quick-btn.dark-color { color: color-mix(in srgb, var(--qc) 45%, #fff); background: color-mix(in srgb, var(--qc) 35%, transparent); }
+.quick-btn:hover:not(:disabled) { background: var(--qc); color: var(--qc-ink); box-shadow: 0 0 12px var(--qc); text-shadow: none; }
+.quick-btn.dragging { opacity: 0.35; }
+.quick-btn.drop-target { background: color-mix(in srgb, var(--qc) 40%, transparent); }
+.quick-add { color: var(--dim); border-style: dashed; border-color: rgba(111, 124, 156, 0.6); background: none; }
+
 /* ---------- tree ---------- */
 .tree { flex: 1; overflow: hidden auto; padding: 4px 8px 16px; }
 .tree::-webkit-scrollbar { width: 8px; }
@@ -396,6 +415,7 @@ dialog h2 {
   font: inherit;
 }
 .field input:focus { border-color: var(--cyan); box-shadow: 0 0 10px rgba(0, 240, 255, 0.25); }
+.field input[type="color"] { height: 34px; padding: 3px; cursor: pointer; }
 .field small { display: block; margin-top: 4px; font-size: 10px; color: var(--dim); }
 .field.check { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .field.check input { order: -1; width: auto; accent-color: var(--purple); }

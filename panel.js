@@ -350,6 +350,10 @@ async function runAction(act, n) {
       case 'sort': return await sortFolder(n);
       case 'group': return await group(scope(n));
       case 'del': return await removeItems(scope(n));
+      case 'q-edit': return await editQuick(n);
+      case 'q-left': return await moveQuick(n, -1);
+      case 'q-right': return await moveQuick(n, 1);
+      case 'q-del': return await removeQuick(n);
     }
   } catch (err) {
     toast(err.message, true);
@@ -658,6 +662,160 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ---------- hotlinks: colored buttons for important pages ----------
+// Kept in chrome.storage.sync (not the bookmarks), so they follow Chrome sync but stay out of the tree.
+// Each is { id, label, url, color }.
+
+const quickEl = $('#quick');
+let quickLinks = [];
+let quickDrag = null;  // id of the hotlink being dragged
+
+async function loadQuick() {
+  quickLinks = (await chrome.storage.sync.get('quickLinks')).quickLinks ?? [];
+  renderQuick();
+}
+
+const saveQuick = () => chrome.storage.sync.set({ quickLinks });
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'sync' && changes.quickLinks) {
+    quickLinks = changes.quickLinks.newValue ?? [];
+    renderQuick();
+  }
+});
+
+// Rough perceived brightness of a #rrggbb color, 0 (black) to 1 (white).
+function brightness(hex) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function renderQuick() {
+  const frag = document.createDocumentFragment();
+  for (const q of quickLinks) {
+    const b = el('button', 'quick-btn', q.label || host(q.url) || q.url);
+    b.type = 'button';
+    b.dataset.id = q.id;
+    b.title = `${q.label}\n${q.url}`;
+    b.draggable = true;
+    b.style.setProperty('--qc', q.color);
+    // Text on the filled (hover) button: dark on bright colors, white on dark ones.
+    b.style.setProperty('--qc-ink', brightness(q.color) > 0.45 ? '#07060d' : '#fff');
+    // A dark color as plain text would vanish into the panel, so its idle label is lightened.
+    b.classList.toggle('dark-color', brightness(q.color) < 0.3);
+    frag.append(b);
+  }
+  const add = el('button', 'quick-add', '+ HOTLINK');
+  add.type = 'button';
+  add.title = 'Add a colored button for a page you use often';
+  frag.append(add);
+  quickEl.replaceChildren(frag);
+}
+
+const quickFor = (target) => quickLinks.find((q) => q.id === target.closest?.('.quick-btn')?.dataset.id);
+
+async function editQuick(q) {
+  let suggestion = { label: '', url: '' };
+  if (!q) {
+    // Start from the current page; easy to overwrite with any other link.
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (/^https?:\/\//.test(tab?.url ?? '')) suggestion = { label: tab.title ?? '', url: tab.url };
+  }
+  const res = await ask({
+    title: q ? 'Edit hotlink' : 'New hotlink',
+    fields: [
+      { name: 'label', label: 'Button name', value: q?.label ?? suggestion.label.slice(0, 40) },
+      { name: 'url', label: 'Link', value: q?.url ?? suggestion.url, placeholder: 'https://…' },
+      { name: 'color', type: 'color', label: 'Color', value: q?.color ?? FOLDER_COLORS[quickLinks.length % FOLDER_COLORS.length] },
+    ],
+    ok: q ? 'SAVE' : 'CREATE',
+  });
+  if (!res) return;
+  if (!res.url) return toast('Add a link for the button', true);
+  // "example.com/page" is fine; it gets https:// in front.
+  const url = /^[a-z][a-z\d+.-]*:/i.test(res.url) ? res.url : `https://${res.url}`;
+  try { new URL(url); } catch { return toast('That link is not valid', true); }
+
+  const label = res.label || host(url) || url;
+  if (q) Object.assign(q, { label, url, color: res.color });
+  else quickLinks.push({ id: crypto.randomUUID(), label, url, color: res.color });
+  await saveQuick();
+  toast(q ? 'Hotlink saved' : `Hotlink “${label}” added`);
+}
+
+async function moveQuick(q, step) {
+  const i = quickLinks.indexOf(q);
+  const j = i + step;
+  if (i < 0 || j < 0 || j >= quickLinks.length) return;
+  [quickLinks[i], quickLinks[j]] = [quickLinks[j], quickLinks[i]];
+  await saveQuick();
+}
+
+async function removeQuick(q) {
+  if (!(await ask({ title: 'Purge', message: `Delete the “${q.label}” button?`, ok: 'DELETE', danger: true }))) return;
+  quickLinks = quickLinks.filter((x) => x !== q);
+  await saveQuick();
+  toast('Hotlink deleted');
+}
+
+quickEl.addEventListener('click', (e) => {
+  if (e.target.closest('.quick-add')) return runAction('q-edit', null);
+  const q = quickFor(e.target);
+  if (q) openUrl(q.url, e.ctrlKey || e.metaKey);
+});
+
+quickEl.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
+quickEl.addEventListener('auxclick', (e) => {
+  const q = quickFor(e.target);
+  if (e.button === 1 && q) openUrl(q.url, true);
+});
+
+quickEl.addEventListener('contextmenu', (e) => {
+  const q = quickFor(e.target);
+  if (!q) return;
+  e.preventDefault();
+  const i = quickLinks.indexOf(q);
+  const items = [['open', 'Open'], ['open-new', 'Open in new tab'], ['copy', 'Copy URL'], '-', ['q-edit', 'Edit name, link, color…']];
+  if (i > 0) items.push(['q-left', '← Move left']);
+  if (i < quickLinks.length - 1) items.push(['q-right', 'Move right →']);
+  items.push('-', ['q-del', 'Delete', 'danger']);
+  openMenu(items, e.clientX, e.clientY, q);
+});
+
+quickEl.addEventListener('dragstart', (e) => {
+  const q = quickFor(e.target);
+  if (!q) return;
+  quickDrag = q.id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/uri-list', q.url);
+  e.dataTransfer.setData('text/plain', q.url);
+  e.target.classList.add('dragging');
+});
+
+quickEl.addEventListener('dragover', (e) => {
+  const over = e.target.closest('.quick-btn');
+  quickEl.querySelectorAll('.drop-target').forEach((b) => { if (b !== over) b.classList.remove('drop-target'); });
+  if (!quickDrag || !over || over.dataset.id === quickDrag) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  over.classList.add('drop-target');
+});
+
+quickEl.addEventListener('drop', async (e) => {
+  const over = e.target.closest('.quick-btn');
+  const from = quickLinks.findIndex((q) => q.id === quickDrag);
+  const to = quickLinks.findIndex((q) => q.id === over?.dataset.id);
+  if (from < 0 || to < 0 || from === to) return;
+  e.preventDefault();
+  quickLinks.splice(to, 0, quickLinks.splice(from, 1)[0]);
+  await saveQuick();
+});
+
+quickEl.addEventListener('dragend', () => {
+  quickDrag = null;
+  renderQuick();
+});
+
 // ---------- signal feed (data is polled by background.js) ----------
 // One horizontal ticker per source, stacked, each scrolling that source's 10 latest items.
 
@@ -888,4 +1046,5 @@ addEventListener('resize', () => {
 feedEl.classList.toggle('collapsed', store.get('feedCollapsed', false));
 
 refresh();
+loadQuick();
 loadFeed().then(() => { if (Date.now() - feed.updatedAt > 2 * 60_000) send('poll'); });
