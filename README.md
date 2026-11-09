@@ -4,6 +4,8 @@ A neon side-panel bookmark manager for Chrome, with an optional **Signal Feed** 
 
 <img width="761" height="517" alt="preview of extension" src="https://github.com/user-attachments/assets/d0fe5196-ba1f-496e-86f6-2c4af3a4bdd8" />
 
+<img width="1928" height="1031" alt="view of extension in browser" src="https://github.com/user-attachments/assets/e9017f6e-4148-4e57-b032-e8510f415d11" />
+
 
 ## Features
 
